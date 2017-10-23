@@ -1,36 +1,41 @@
 # -*- coding:utf-8 -*-
 
 import re
+from bs4 import BeautifulSoup
 
 from _unescaper import *
 
 def get_app_basic_info(market, data):
 	dict = {}
 	if market == 'yingyongbao':
-		matcher = re.findall("det-name-int\">.*?</div>", data)
-		if len(matcher): dict['Name'] = unescape(matcher[0].replace("det-name-int\">", "").replace('</div>', "").replace('\t', " ").replace('\r', "").replace('\n', " "))
-		matcher = re.findall("det-ins-num\">.*?下载</div>", data)
-		if len(matcher): dict['Download'] = unescape(matcher[0].replace('det-ins-num">', "").replace('下载</div>', "").replace('\t', " ").replace('\r', "").replace('\n', " "))
-		matcher = re.findall('det-size">.*?</div>', data)
-		if len(matcher): dict['Size'] = unescape(matcher[0].replace('det-size">', "").replace('</div>', "").replace('\t', " ").replace('\r', "").replace('\n', " "))
-		matcher = re.findall('star-num">.*?分</div>', data)
-		if len(matcher): dict['Rating'] = unescape(matcher[0].replace('star-num">', "").replace('分</div>', "").replace('\t', " ").replace('\r', "").replace('\n', " "))
-		matcher = re.findall('<a href="#CommentList" id="J_CommentCount">（[0-9]*人评论）</a>', data)
-		if len(matcher): dict['Rating_Num'] = unescape(matcher[0].replace('<a href="#CommentList" id="J_CommentCount">（', "").replace('人评论）</a>', "").replace('\t', " ").replace('\r', "").replace('\n', " "))
-		matcher = re.findall('id="J_DetCate">.*?</a>', data)
-		if len(matcher): dict['Category'] = unescape(matcher[0].replace('id="J_DetCate">', "").replace('</a>', "").replace('\t', " ").replace('\r', "").replace('\n', " "))
-		matcher = re.findall('det-othinfo-tit">版本号：</div>.*?det-othinfo-data">.*?</div>', data, re.S)
+		soup = BeautifulSoup(data, "lxml")
+
+		matcher = soup.find_all("div", class_ = "det-name-int")
 		if len(matcher):
-			matcher = re.findall('othinfo-data">.*?</div>', matcher[0])
-			if len(matcher): dict['Edition'] = unescape(matcher[0].replace('othinfo-data">', "").replace('</div>', "").replace('\t', " ").replace('\r', "").replace('\n', " "))
-		matcher = re.findall('det-othinfo-tit">开发商：</div>.*?det-othinfo-data">.*?</div>', data, re.S)
+			dict['Name'] = unescape(matcher[0].string.replace('\t', " ").replace('\r', "").replace('\n', " "))
+		matcher = soup.find_all("div", class_ = "det-ins-num")
 		if len(matcher):
-			matcher = re.findall('othinfo-data">.*?</div>', matcher[0])
-			if len(matcher): dict['Developer'] = unescape(matcher[0].replace('othinfo-data">', "").replace('</div>', "").replace('\t', " ").replace('\r', "").replace('\n', " "))		
-		matcher = re.findall('data-apkpublishtime="[0-9]*">.*?</div>', data)
+			dict['Download'] = unescape(matcher[0].string.replace("下载", "").replace('\t', " ").replace('\r', "").replace('\n', " "))
+		matcher = soup.find_all("div", class_ = "det-size")
 		if len(matcher):
-			matcher = re.findall('[0-9]*年[0-9]*月[0-9]*日', matcher[0])
-			if len(matcher): dict['Update_Time'] = matcher[0]
+			dict['Size'] = unescape(matcher[0].string.replace('\t', " ").replace('\r', "").replace('\n', " "))
+		matcher = soup.find_all("div", class_ = "com-blue-star-num")
+		if len(matcher):
+			dict['Rating'] = unescape(matcher[0].string.replace("分", "").replace('\t', " ").replace('\r', "").replace('\n', " "))
+		matcher = soup.select('#J_CommentCount')
+		if len(matcher):
+			dict['Rating_Num'] = unescape(matcher[0].get_text().replace("（", "").replace("）", "").replace("人评论", "").replace('\t', " ").replace('\r', "").replace('\n', " "))
+		matcher = soup.select("#J_DetCate")
+		if len(matcher):
+			dict['Category'] = unescape(matcher[0].get_text().replace('\t', " ").replace('\r', "").replace('\n', " "))
+		matcher = soup.select("#det-othinfo-data")
+		if len(matcher) >= 2:
+			dict['Edition'] = unescape(matcher[0].get_text().replace('V', "").replace('v', "").replace('\t', " ").replace('\r', "").replace('\n', " "))
+			dict['Developer'] = unescape(matcher[2].get_text(0).replace('v', "").replace('\t', " ").replace('\r', "").replace('\n', " "))
+		matcher = soup.select("#J_ApkPublishTime")
+		if len(matcher):
+			dict['Update_Time'] = unescape(matcher[0].get_text().replace('\t', " ").replace('\r', "").replace('\n', " "))
+
 		if 'adv-btn_has">有广告' in data: dict['Has_Ads'] = 'True'
 		elif 'adv-btn">无广告' in data: dict['Has_Ads'] = 'False'
 			
@@ -520,6 +525,14 @@ def get_app_basic_info(market, data):
 		elif '<i class="has-ad"></i>有广告' in data: dict['Has_Ads'] = 'True'
 
 	elif market == 'liqucn':
+		soup = BeautifulSoup(data, 'lxml')
+		edition = soup.find_all("div", class_ = "app_leftinfo")
+		if len(edition):
+			edition = edition[0].find_all("span")
+			if len(edition):
+				edition = edition[0].string
+				if len(edition) > 2:
+					dict['Edition'] = edition[3:]
 		matcher = re.findall('<h3>.*?</h3><p>', data)
 		if len(matcher): dict['Name'] = unescape(matcher[0].replace('<h3>', "").replace('</h3><p>', "").replace('\t', " ").replace('\r', "").replace('\n', " "))
 		matcher = re.findall('下载次数：<em>.*?</em>', data)
