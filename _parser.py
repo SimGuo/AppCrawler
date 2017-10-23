@@ -7,9 +7,8 @@ from _unescaper import *
 
 def get_app_basic_info(market, data):
 	dict = {}
+	soup = BeautifulSoup(data, "lxml")
 	if market == 'yingyongbao':
-		soup = BeautifulSoup(data, "lxml")
-
 		matcher = soup.find_all("div", class_ = "det-name-int")
 		if len(matcher):
 			dict['Name'] = unescape(matcher[0].string.replace('\t', " ").replace('\r', "").replace('\n', " "))
@@ -40,22 +39,35 @@ def get_app_basic_info(market, data):
 		elif 'adv-btn">无广告' in data: dict['Has_Ads'] = 'False'
 			
 	elif market == 'baidu':
-		matcher = re.findall('<span class="gray">.*?</span>', data)
-		if len(matcher): dict['Name'] = unescape(matcher[0].replace('<span class="gray">', "").replace('</span>', "").replace('\t', " ").replace('\r', "").replace('\n', " "))
-		matcher = re.findall('class="download-num">下载次数: .*?</span>', data)
-		if len(matcher): dict['Download'] = unescape(matcher[0].replace('class="download-num">下载次数: ', "").replace('</span>', "").replace('\t', " ").replace('\r', "").replace('\n', " "))
-		matcher = re.findall('class="size">大小: .*?</span>', data)
-		if len(matcher): dict['Size'] = unescape(matcher[0].replace('class="size">大小: ', "").replace('</span>', "").replace('\t', " ").replace('\r', "").replace('\n', " "))
-		matcher = re.findall('class="star-percent" style="width:[0-9]*%">', data)
-		if len(matcher): dict['Rating'] = unescape(matcher[0].replace('class="star-percent" style="width:', "").replace('%">', "").replace('\t', " ").replace('\r', "").replace('\n', " "))
-		matcher = re.findall('<a target="_self" href="/.*?/">.*?</a>', data)
-		if len(matcher) >= 2:
-			type0 = re.subn('<a target="_self" href="/.*?/">', "", unescape(matcher[0].replace('</a>', "")))[0]
-			type1 = re.subn('<a target="_self" href="/.*?/">', "", unescape(matcher[1].replace('</a>', "")))[0]
+		matcher = soup.select(".gray")
+		if len(matcher):
+			dict['Name'] = unescape(matcher[0].get_text().replace('\t', " ").replace('\r', "").replace('\n', " "))
+		matcher = soup.select(".download-num")
+		if len(matcher):
+			dict['Download'] = unescape(matcher[0].get_text().replace("下载次数:", "").replace(" ", "").replace('\t', " ").replace('\r', "").replace('\n', " "))
+		matcher = soup.select(".detail")
+		if len(matcher):
+			matcher = matcher[0].select(".size")
+			if len(matcher):
+				dict['Size'] = unescape(matcher[0].get_text().replace("大小:", "").replace(" ", "").replace('\t', " ").replace('\r', "").replace('\n', " "))
+		matcher = soup.find_all("span", class_ = "star-percent")
+		if len(matcher):
+			dict['Rating'] = unescape(matcher[0].attrs['style'].replace("width:", "").replace("%", "").replace('\t', " ").replace('\r', "").replace('\n', " "))
+
+		matcher = soup.select('#J_CommentCount')
+		if len(matcher):
+			dict['Rating_Num'] = unescape(matcher[0].get_text().replace("（", "").replace("）", "").replace("人评论", "").replace('\t', " ").replace('\r', "").replace('\n', " "))
+		matcher = soup.find_all("a", target = "_self")
+		if len(matcher):
+			type0 = unescape(matcher[1].string.replace('\t', " ").replace('\r', "").replace('\n', " "))
+			type1 = unescape(matcher[2].string.replace('\t', " ").replace('\r', "").replace('\n', " "))
 			dict['Category'] = type0+"-"+type1
-		matcher = re.findall('class="version">版本: .*?</span>', data)
-		if len(matcher): dict['Edition'] = unescape(matcher[0].replace('class="version">版本: ', "").replace('</span>', "").replace('\t', " ").replace('\r', "").replace('\n', " "))		
-		
+		matcher = soup.select(".version")
+		if len(matcher):
+			dict['Edition'] = unescape(matcher[0].get_text().replace("版本:", "").replace(" ", "").replace('\t', " ").replace('\r', "").replace('\n', " "))
+		if '<span class="res-tag-ok">无广告</span>' in data: dict['Has_Ads'] = 'False'
+		elif '<span class="res-tag-warning">含广告</span>' in data: dict['Has_Ads'] = 'True'
+
 	elif market == '360':
 		matcher = re.findall('<span title=".*?">', data)
 		if len(matcher): dict['Name'] = unescape(matcher[0].replace('<span title="', "").replace('">', "").replace('\t', " ").replace('\r', "").replace('\n', " "))
