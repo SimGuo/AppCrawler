@@ -222,40 +222,45 @@ def get_app_basic_info(market, data):
 					dict['Update_Time'] = unescape(matcher[2].string.replace('\t', " ").replace('\r', "").replace('\n', " "))
 
 	elif market == 'wandoujia':
-		matcher = re.findall('<span class="title" itemprop="name">.*?</span>', data)
-		if len(matcher): dict['Name'] = unescape(matcher[0].replace('<span class="title" itemprop="name">', "").replace('</span>', "").replace('\t', " ").replace('\r', "").replace('\n', " "))
-		matcher = re.findall('data-install=".*?"', data)
-		if len(matcher): dict['Download'] = unescape(matcher[0].replace('data-install="', "").replace('"', "").replace('\t', " ").replace('\r', "").replace('\n', " ").replace(" ", ""))
-		matcher = re.findall('<meta itemprop="fileSize" content="[0-9]+"/>', data)
-		if len(matcher): dict['Size'] = unescape(matcher[0].replace('<meta itemprop="fileSize" content="', "").replace('"/>', "").replace('\t', " ").replace('\r', "").replace('\n', " ").replace(" ", ""))
-		matcher = re.findall('data-like=".*?"', data)
-		if len(matcher): dict['Like_Num'] = unescape(matcher[0].replace('data-like="', "").replace('"', "").replace('\t', " ").replace('\r', "").replace('\n', " ").replace(" ", ""))
-		matcher = re.findall('<i>[0-9]+</i>[ \n\r\t]*<b>人评论</b>', data, re.S)
+		matcher = soup.find_all(class_ = "download-wp")
 		if len(matcher):
-			matcher = re.findall('<i>[0-9]+</i>', matcher[0])
-			if len(matcher): dict['Comment_Num'] = unescape(matcher[0].replace('<i>', "").replace('</i>', "").replace('\t', " ").replace('\r', "").replace('\n', " ").replace(" ", ""))
-		matcher = re.findall('itemprop="SoftwareApplicationCategory" data-track="detail-click-appTag">.*?</a>', data)
+			matcher = matcher[0].find("a")
+			if matcher != None:
+				dict['Name'] = unescape(matcher.get("data-app-name").replace('\t', " ").replace('\r', "").replace('\n', " "))
+				dict['Edition'] = unescape(matcher.get("data-app-vname").replace('\t', " ").replace('\r', "").replace('\n', " "))
+				dict['Download'] = unescape(matcher.get("data-install").replace('\t', " ").replace('\r', "").replace('\n', " "))
+				if matcher.get('date-like') != None: dict['Like_Num'] = unescape(matcher.get('date-like').replace('\t', " ").replace('\r', "").replace('\n', " "))
+		matcher = soup.find_all("dl", class_ = "infos-list")
 		if len(matcher):
-			categoryall = ""
-			for category in matcher:
-				categoryall += unescape(category.replace('itemprop="SoftwareApplicationCategory" data-track="detail-click-appTag">', "").replace('</a>', "").replace('\t', " ").replace('\r', "").replace('\n', " "))+";"
-			dict['Category'] = categoryall[:-1]
-		matcher = re.findall('<div class="tag-box">[ \n\r\t]*<a href="http://www.wandoujia.com/tag/.*?">[ \n\r\t]*.*?[ \n\r\t]*</a>[ \n\r\t]*</div>', data, re.S)
+			tmpmatcher = matcher[0].find_all("meta")
+			if len(tmpmatcher):
+				dict['Size'] = unescape(tmpmatcher[0]['content'].replace('\t', " ").replace('\r', "").replace('\n', " "))
+			tmpmatcher = matcher[0].find_all(itemprop = "SoftwareApplicationCategory")
+			if len(tmpmatcher) and len(tmpmatcher[0].string):
+				dict['Category'] = unescape(tmpmatcher[0].string.replace('\t', " ").replace('\r', "").replace('\n', " "))
+		matcher = soup.find_all(class_ = "item last comment-open")
 		if len(matcher):
+			matcher = matcher[0].find("i")
+			if len(matcher): dict['Comment_Num'] = unescape(matcher.string.replace('\t', " ").replace('\r', "").replace('\n', " ").replace(" ", ""))
+		matcher = soup.find_all(itemprop = "operatingSystems")
+		if len(matcher) and len(matcher[0].contents):
+			if matcher[0].contents[0].string != None:
+				dict['System'] = unescape(matcher[0].contents[0].string.replace('\t', " ").replace('\r', "").replace('\n', " ").replace(" ", ""))
+		matcher = soup.find_all(class_ = "side-tags clearfix")
+		if len(matcher):
+			matcher = matcher[0].find_all(class_ = "tag-box")
 			tagall = ""
-			for tag in matcher:
-				tagall += unescape(re.subn('<.*?>', "", tag)[0].replace('\t', " ").replace('\r', "").replace('\n', "").replace(" ", ""))+";"
-			dict['Tag'] = tagall[:-1]
-		matcher = re.findall('<dt>版本</dt>[ \n\r\t]*<dd>.*?</dd>', data, re.S)
+			for tag_line in matcher:
+				tmptag = tag_line.find("a")
+				if tmptag.string != None: tagall += unescape(tmptag.string.replace('\t', " ").replace('\r', "").replace('\n', "").replace(" ", ""))+";"
+				dict['Tag'] = tagall[:-1]
+		matcher = soup.find_all(class_ = "dev-sites")
+		if len(matcher) and matcher[0].string != None:
+			dict['Developer']  = unescape(matcher[0].string.replace('\t', " ").replace('\r', "").replace('\n', " ").replace(" ", ""))
+		matcher = soup.find_all(itemprop = "datePublished")
 		if len(matcher):
-			matcher = re.findall('<dd>.*?</dd>', matcher[0])
-			if len(matcher): dict['Edition'] = unescape(matcher[0].replace('<dd>', "").replace('</dd>', "").replace('\t', " ").replace('\r', " ").replace('\n', " "))
-		matcher = re.findall('<dt>来自</dt>.*?<dd>.*?</dd>', data, re.S)
-		if len(matcher): dict['Developer'] = unescape(re.subn('<.*?>', "", matcher[0].replace("<dt>来自</dt>", ""))[0].replace('\t', "").replace('\r', "").replace('\n', "").replace(" ", ""))
-		matcher = re.findall('datetime=".*?">', data)
-		if len(matcher): dict['Update_Time'] = unescape(matcher[0].replace('datetime="', "").replace('">', "").replace('\t', " ").replace('\r', "").replace('\n', " "))
-		matcher = re.findall('<dt>要求</dt>.*?<dd.*?<', data, re.S)
-		if len(matcher): dict['System'] = unescape(re.subn(' *<.*?> *', "", matcher[0].replace('<dt>要求</dt>', "").replace('\t', "").replace('\r', "").replace(" ", "").replace('\n', " "))[0].replace('<', ""))
+			matcher = matcher[0].get("datetime")
+			if matcher != None:	dict['Update_Time'] = unescape(matcher.replace('\t', " ").replace('\r', "").replace('\n', "").replace(" ", ""))
 		if '<s class="tag adv-embed"></s>' in data: dict['Has_Ads'] = 'True'
 		elif '<s class="tag no-ad"></s>' in data: dict['Has_Ads'] = 'False'
 		
