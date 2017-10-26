@@ -162,31 +162,30 @@ def get_app_basic_info(market, data):
 		if len(matcher): dict['Price'] = unescape(re.subn(' *<.*?> *', "", matcher[0])[0]).replace("安装", "免费").replace("Install", "Free")
 		
 	elif market == 'huawei':
-		matcher = re.findall('<p><span class="title">.*?</span>', data)
-		if len(matcher): dict['Name'] = unescape(matcher[0].replace('<p><span class="title">', "").replace('</span>', "").replace('\t', " ").replace('\r', "").replace('\n', " "))
-		matcher = re.findall('<span class="grey sub">.*?</span>', data)
+		matcher = soup.find_all("div", class_ = "app-info flt")
 		if len(matcher):
-			matcher = re.findall('[0-9]+', matcher[0])
-			if len(matcher): dict['Download'] = matcher[0]
-		matcher = re.findall('<li class="ul-li-detail">大小：<span>.*?</span>', data)
-		if len(matcher): dict['Size'] = unescape(matcher[0].replace('<li class="ul-li-detail">大小：<span>', "").replace('</span>', "").replace('\t', " ").replace('\r', "").replace('\n', " "))
-		matcher = re.findall('<span class="score_[0-9]*">', data)
+			tmpmatcher = matcher[0].select(".title")
+			if len(tmpmatcher):
+				dict['Name'] = unescape(tmpmatcher[0].string.replace('\t', " ").replace('\r', "").replace('\n', " "))
+			tmpmatcher = matcher[0].find_all("span", class_ = "grey sub")
+			if len(tmpmatcher):
+				dict['Download'] = unescape(tmpmatcher[0].string.replace("下载：", "").replace("次", "").replace(" ", "").replace('\t', " ").replace('\r', "").replace('\n', " "))
+			tmpmatcher = matcher[0].find_all("span", class_ = re.compile("score_"))
+			if len(tmpmatcher):
+				dict['Rating'] = unescape(tmpmatcher[0]["class"][0].replace("score_", "").replace('\t', " ").replace('\r', "").replace('\n', " "))
+		matcher = soup.find_all("li", class_ = "ul-li-detail")
+		if len(matcher) >= 4:
+			dict['Size'] = unescape(matcher[0].find_all("span")[0].string.replace(" ", "").replace('\t', " ").replace('\r', "").replace('\n', " "))
+			dict['Update_Time'] = unescape(matcher[1].find_all("span")[0].string.replace('\t', " ").replace('\r', "").replace('\n', " "))
+			dict['Developer'] = unescape(matcher[2].find_all("span")[0].get("title").replace('\t', " ").replace('\r', "").replace('\n', " "))
+			dict['Edition'] = unescape(matcher[3].find_all("span")[0].string.replace('\t', " ").replace('\r', "").replace('\n', " "))
+		matcher = soup.find_all(class_ = "sub nofloat")
 		if len(matcher):
-			matcher = re.findall('[0-9]+', matcher[0])
-			if len(matcher): dict['Rating'] = matcher[0]
-		matcher = re.findall('（[0-9]+条）:</span>', data)
-		if len(matcher):
-			matcher = re.findall('[0-9]+', matcher[0])
-			if len(matcher): dict['Rating_Num'] = matcher[0]
-		matcher = re.findall('<span class="title flt ft-yh">.*?排行<', data)
-		if len(matcher): dict['Category'] = unescape(matcher[0].replace('<span class="title flt ft-yh">', "").replace('排行<', "").replace('\t', " ").replace('\r', "").replace('\n', " "))
-		matcher = re.findall('<li class="ul-li-detail">版本：<span>.*?</span>', data)
-		if len(matcher): dict['Edition'] = unescape(matcher[0].replace('<li class="ul-li-detail">版本：<span>', "").replace('</span>', "").replace('\t', " ").replace('\r', "").replace('\n', " "))
-		matcher = re.findall('<li class="ul-li-detail">开发者：<span title=\'.*?\'>', data)
-		if len(matcher): dict['Developer'] = unescape(matcher[0].replace('<li class="ul-li-detail">开发者：<span title=\'', "").replace('\'>', "").replace('\t', " ").replace('\r', "").replace('\n', " "))
-		matcher = re.findall('<li class="ul-li-detail">日期：<span>.*?</span>', data)
-		if len(matcher): dict['Update_Time'] = unescape(matcher[0].replace('<li class="ul-li-detail">日期：<span>', "").replace('</span>', "").replace('\t', " ").replace('\r', "").replace('\n', " "))
-		
+			matcher = matcher[0].find_all("span")
+			if len(matcher) and len(matcher[0].string):
+				matcher = re.findall("[0-9]+", matcher[0].string)
+				if len(matcher): dict['Rating_Num'] = unescape(matcher[0].replace('\t', " ").replace('\r', "").replace('\n', " "))
+				
 	elif market == 'xiaomi':
 		matcher = re.findall('</p><h3>.*?</h3><p', data)
 		if len(matcher): dict['Name'] = unescape(matcher[0].replace('</p><h3>', "").replace('</h3><p', "").replace('\t', " ").replace('\r', "").replace('\n', " "))
