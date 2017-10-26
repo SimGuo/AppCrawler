@@ -264,39 +264,6 @@ def get_app_basic_info(market, data):
 		if '<s class="tag adv-embed"></s>' in data: dict['Has_Ads'] = 'True'
 		elif '<s class="tag no-ad"></s>' in data: dict['Has_Ads'] = 'False'
 		
-	elif market == 'hiapk':
-		matcher = re.findall('id="hidAppName" value=".*?">', data)
-		if len(matcher): dict['Name'] = unescape(matcher[0].replace('id="hidAppName" value="', "").replace('">', "").replace('\t', " ").replace('\r', "").replace('\n', " "))
-		matcher = re.findall('>.*?热度</span>', data)
-		if len(matcher): dict['Download'] = unescape(matcher[0].replace('热度</span>', "").replace('>', "").replace('\t', " ").replace('\r', "").replace('\n', " "))
-		matcher = re.findall('<span id="appSize".*?>.*?</span>', data)
-		if len(matcher): dict['Size'] = unescape(re.subn('<.*?>', "", matcher[0])[0])
-		matcher = re.findall('<div class="star_num">.*?</div>', data, re.S)
-		if len(matcher): dict['Rating'] = unescape(re.subn('<.*?>', "", matcher[0])[0].replace('\t', "").replace('\r', "").replace('\n', "").replace(" ", ""))
-		matcher = re.findall('<span id="startCount">[0-9]+</span>', data)
-		if len(matcher): dict['Rating_Num'] = unescape(matcher[0].replace('<span id="startCount">', "").replace('</span>', "").replace('\t', " ").replace('\r', "").replace('\n', " "))
-		matcher = re.findall('<div class="font14 star_per_font">.*?</div>', data, re.S)
-		if len(matcher) == 5:
-			dict['5-Star_Rating_Num'] = unescape(matcher[0].replace('<div class="font14 star_per_font">', "").replace('</div>', "").replace('\t', "").replace('\r', "").replace('\n', "").replace(" ", ""))
-			dict['4-Star_Rating_Num'] = unescape(matcher[1].replace('<div class="font14 star_per_font">', "").replace('</div>', "").replace('\t', "").replace('\r', "").replace('\n', "").replace(" ", ""))
-			dict['3-Star_Rating_Num'] = unescape(matcher[2].replace('<div class="font14 star_per_font">', "").replace('</div>', "").replace('\t', "").replace('\r', "").replace('\n', "").replace(" ", ""))
-			dict['2-Star_Rating_Num'] = unescape(matcher[3].replace('<div class="font14 star_per_font">', "").replace('</div>', "").replace('\t', "").replace('\r', "").replace('\n', "").replace(" ", ""))
-			dict['1-Star_Rating_Num'] = unescape(matcher[4].replace('<div class="font14 star_per_font">', "").replace('</div>', "").replace('\t', "").replace('\r', "").replace('\n', "").replace(" ", ""))
-		matcher = re.findall('类别：</span>.*?</span>', data, re.S)
-		if len(matcher): dict['Category'] = unescape(re.subn('<.*?>', "", matcher[0].replace("类别：", ""))[0].replace('\t', "").replace('\r', "").replace('\n', "").replace(" ", ""))
-		matcher = re.findall('<div id="appSoftName" class="detail_title left">.*?</div>', data, re.S)
-		if len(matcher) and 'Name' in dict: dict['Edition'] = unescape(re.subn('<.*?>', "", matcher[0].replace(dict['Name'], ""))[0].replace('\t', "").replace('\r', "").replace('\n', "").replace(" ", "").replace("(", "").replace(")", ""))
-		matcher = re.findall('<span class="d_u_line">.*?</span>', data)
-		if len(matcher): dict['Developer'] = unescape(matcher[0].replace('<span class="d_u_line">', "").replace('</span>', "").replace('\t', " ").replace('\r', "").replace('\n', " "))
-		matcher = re.findall('<span class="font14">上架时间：</span>.*?</span>', data, re.S)
-		if len(matcher): dict['Update_Time'] = unescape(re.subn('<.*?>', "", matcher[0].replace("上架时间：", ""))[0].replace('\t', "").replace('\r', "").replace('\n', "").replace(" ", ""))
-		matcher = re.findall('<span class="font14 detailMiniSdk d_gj_line left">.*?</span>', data)
-		if len(matcher): dict['System'] = unescape(matcher[0].replace('<span class="font14 detailMiniSdk d_gj_line left">', "").replace('</span>', "").replace('\t', " ").replace('\r', "").replace('\n', " "))
-		matcher = re.findall('<span class="font14">语言：</span>.*?</span>', data, re.S)
-		if len(matcher): dict['Language'] = unescape(re.subn('<.*?>', "", matcher[0].replace("语言：", ""))[0].replace('\t', "").replace('\r', "").replace('\n', "").replace(" ", ""))
-		if '<div class="app_adv adv_result">' in data: dict['Has_Ads'] = 'True'
-		elif '<div class="no_adv">' in data: dict['Has_Ads'] = 'False'
-		
 	elif market == 'anzhi':
 		matcher = re.findall('var SOFT_NAME=".*?";', data)
 		if len(matcher): dict['Name'] = unescape(matcher[0].replace('var SOFT_NAME="', "").replace('";', "").replace('\t', " ").replace('\r', "").replace('\n', " "))
