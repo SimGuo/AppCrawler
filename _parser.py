@@ -185,27 +185,42 @@ def get_app_basic_info(market, data):
 			if len(matcher) and len(matcher[0].string):
 				matcher = re.findall("[0-9]+", matcher[0].string)
 				if len(matcher): dict['Rating_Num'] = unescape(matcher[0].replace('\t', " ").replace('\r', "").replace('\n', " "))
-				
+		matcher = re.findall('<span class="title flt ft-yh">.*?排行<', data)
+		if len(matcher): dict['Category'] = unescape(matcher[0].replace('<span class="title flt ft-yh">', "").replace('排行<', "").replace('\t', " ").replace('\r', "").replace('\n', " "))
+	
 	elif market == 'xiaomi':
-		matcher = re.findall('</p><h3>.*?</h3><p', data)
-		if len(matcher): dict['Name'] = unescape(matcher[0].replace('</p><h3>', "").replace('</h3><p', "").replace('\t', " ").replace('\r', "").replace('\n', " "))
-		matcher = re.findall('软件大小:</li><li>.*?</li>', data)
-		if len(matcher): dict['Size'] = unescape(matcher[0].replace('软件大小:</li><li>', "").replace('</li>', "").replace('\t', " ").replace('\r', "").replace('\n', " "))
-		matcher = re.findall('<div class="star1-hover star1-[0-9]+', data)
-		if len(matcher): dict['Rating'] = unescape(matcher[0].replace('<div class="star1-hover star1-', "").replace('\t', " ").replace('\r', "").replace('\n', " "))
-		matcher = re.findall('[0-9]+次评分 \)<\/span>', data)
-		if len(matcher): dict['Rating_Num'] = unescape(matcher[0].replace('次评分 )</span>', "").replace('\t', " ").replace('\r', "").replace('\n', " "))
-		matcher = re.findall('<b>分类：</b>.*?<span', data)
-		if len(matcher): dict['Category'] = unescape(matcher[0].replace('<b>分类：</b>', "").replace('<span', "").replace('\t', " ").replace('\r', "").replace('\n', " "))
-		matcher = re.findall('版本号：</li><li>.*?</li>', data)
-		if len(matcher): dict['Edition'] = unescape(matcher[0].replace('版本号：</li><li>', "").replace('</li>', "").replace('\t', " ").replace('\r', "").replace('\n', " "))
-		matcher = re.findall('"intro-titles"><p>.*?</p><h3>', data)
-		if len(matcher): dict['Developer'] = unescape(matcher[0].replace('"intro-titles"><p>', "").replace('</p><h3>', "").replace('\t', " ").replace('\r', "").replace('\n', " "))
-		matcher = re.findall('更新时间：</li><li>.*?</li>', data)
-		if len(matcher): dict['Update_Time'] = unescape(matcher[0].replace('更新时间：</li><li>', "").replace('</li>', "").replace('\t', " ").replace('\r', "").replace('\n', " "))
-		matcher = re.findall('<b>支持：</b>.*?</p>', data)
-		if len(matcher): dict['Device'] = unescape(matcher[0].replace('<b>支持：</b>', "").replace('</p>', "").replace('\t', " ").replace('\r', "").replace('\n', " "))
-		
+		matcher = soup.select(".intro-titles")
+		if len(matcher):
+			matcher = matcher[0]
+			tmpmatcher = matcher.select("p")
+			if len(tmpmatcher):
+				dict['Developer'] = unescape(tmpmatcher[0].string.replace('\t', " ").replace('\r', "").replace('\n', " "))
+			tmpmatcher = matcher.select("h3")
+			if len(tmpmatcher):
+				dict['Name'] = unescape(tmpmatcher[0].string.replace('\t', " ").replace('\r', "").replace('\n', " "))
+			tmpmatcher = matcher.find_all(class_ = "special-font action")
+			if len(tmpmatcher):
+				tmpmatcher = tmpmatcher[0].contents
+				dict['Category'] = unescape(tmpmatcher[1].replace('\t', " ").replace('\r', "").replace('\n', " "))
+				dict['Device'] = unescape(tmpmatcher[4].replace('\t', " ").replace('\r', "").replace('\n', " "))
+			tmpmatcher = matcher.find_all(class_ = "star1-empty")
+			if len(tmpmatcher):
+				tmpmatcher = tmpmatcher[0].select("div")
+				dict['Rating'] = unescape(tmpmatcher[0].get("class")[1].replace("star1-", "").replace('\t', " ").replace('\r', "").replace('\n', " "))
+			tmpmatcher = matcher.find_all(class_ = "app-intro-comment")
+			if len(tmpmatcher):
+				tmpmatcher = re.findall("[0-9]+", tmpmatcher[0].string)
+				if len(tmpmatcher): dict['Rating_Num'] = unescape(tmpmatcher[0].replace('\t', " ").replace('\r', "").replace('\n', " "))
+		matcher = soup.find_all(class_ = "details preventDefault")
+		if len(matcher):
+			matcher = matcher[0].find_all(class_ = "cf")
+			if len(matcher):
+				matcher = matcher[0].find_all("li", class_ = False)
+				if len(matcher) >= 3:
+					dict['Size'] = unescape(matcher[0].string.replace('\t', " ").replace('\r', "").replace('\n', " "))
+					dict['Edition'] = unescape(matcher[1].string.replace('\t', " ").replace('\r', "").replace('\n', " "))
+					dict['Update_Time'] = unescape(matcher[2].string.replace('\t', " ").replace('\r', "").replace('\n', " "))
+
 	elif market == 'wandoujia':
 		matcher = re.findall('<span class="title" itemprop="name">.*?</span>', data)
 		if len(matcher): dict['Name'] = unescape(matcher[0].replace('<span class="title" itemprop="name">', "").replace('</span>', "").replace('\t', " ").replace('\r', "").replace('\n', " "))
