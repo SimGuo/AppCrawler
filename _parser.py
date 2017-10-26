@@ -265,26 +265,28 @@ def get_app_basic_info(market, data):
 		elif '<s class="tag no-ad"></s>' in data: dict['Has_Ads'] = 'False'
 		
 	elif market == 'anzhi':
-		matcher = re.findall('var SOFT_NAME=".*?";', data)
-		if len(matcher): dict['Name'] = unescape(matcher[0].replace('var SOFT_NAME="', "").replace('";', "").replace('\t', " ").replace('\r', "").replace('\n', " "))
-		matcher = re.findall('<span class="spaceleft">下载：.*?</span>', data)
-		if len(matcher): dict['Download'] = unescape(matcher[0].replace('<span class="spaceleft">下载：', "").replace('</span>', "").replace('\t', " ").replace('\r', "").replace('\n', " "))
-		matcher = re.findall('<span class="spaceleft">大小：.*?</span>', data)
-		if len(matcher): dict['Size'] = unescape(matcher[0].replace('<span class="spaceleft">大小：', "").replace('</span>', "").replace('\t', " ").replace('\r', "").replace('\n', " "))
-		matcher = re.findall('<div id="stars_detail" class="stars center" style="background-position:0 -?[0-9]+px;"></div>', data)
-		if len(matcher): dict['Rating'] = str(int(abs(int(matcher[0].replace('<div id="stars_detail" class="stars center" style="background-position:0 ', "").replace('px;"></div>', ""))/15)))
-		matcher = re.findall('style="position:relative;">评论\([0-9]+\)', data)
-		if len(matcher): dict['Rating_Num'] = unescape(matcher[0].replace('style="position:relative;">评论(', "").replace(')', "").replace('\t', " ").replace('\r', "").replace('\n', " "))
-		matcher = re.findall('<li>分类：.*?</li>', data)
-		if len(matcher): dict['Category'] = unescape(matcher[0].replace('<li>分类：', "").replace('</li>', "").replace('\t', " ").replace('\r', "").replace('\n', " "))
-		matcher = re.findall('<span class="app_detail_version">.*?</span>', data)
-		if len(matcher): dict['Edition'] = unescape(matcher[0].replace('<span class="app_detail_version">', "").replace('</span>', "").replace('\t', " ").replace('\r', "").replace('\n', " ").replace('(', "").replace(')', ""))
-		matcher = re.findall('<li>作者：.*?</li>', data)
-		if len(matcher): dict['Developer'] = unescape(matcher[0].replace('<li>作者：', "").replace('</li>', "").replace('\t', " ").replace('\r', "").replace('\n', " "))
-		matcher = re.findall('<li>时间：.*?</li>', data)
-		if len(matcher): dict['Update_Time'] = unescape(matcher[0].replace('<li>时间：', "").replace('</li>', "").replace('\t', " ").replace('\r', "").replace('\n', " "))
-		matcher = re.findall('<li>系统：.*?</li>', data)
-		if len(matcher): dict['System'] = unescape(matcher[0].replace('<li>系统：', "").replace('</li>', "").replace('\t', " ").replace('\r', "").replace('\n', " "))
+
+		matcher = soup.find_all(class_ = "detail_description")
+		if len(matcher):
+			tmpmatcher = matcher[0].find_all(class_ = "detail_line")
+			if len(tmpmatcher) >= 2:
+				dict['Name'] = unescape(tmpmatcher[0].find("h3").string.replace('\t', " ").replace('\r', "").replace('\n', " "))
+				dict['Edition'] = unescape(tmpmatcher[0].find("span").string.replace("(", "").replace(")", "").replace('\t', " ").replace('\r', "").replace('\n', " "))
+				dict['Rating'] = str(abs(int(tmpmatcher[1].find("div").get("style").replace("background-position:0 ", "").replace("px;", "").replace('\t', " ").replace('\r', "").replace('\n', " ")))/15)
+		matcher = matcher[0].find(id = "detail_line_ul")
+		if len(matcher):
+			tmpmatcher = matcher.find_all("li")
+			dict['Category'] = unescape(tmpmatcher[0].string.replace("分类：", "").replace('\t', " ").replace('\r', "").replace('\n', " "))
+			dict['Download'] = unescape(tmpmatcher[1].find("span").string.replace("下载：", "").replace("+", "").replace('\t', " ").replace('\r', "").replace('\n', " "))
+			dict['Update_Time'] = unescape(tmpmatcher[2].string.replace("时间：", "").replace('\t', " ").replace('\r', "").replace('\n', " "))
+			dict['Size'] = unescape(tmpmatcher[3].find("span").string.replace("大小：", "").replace('\t', " ").replace('\r', "").replace('\n', " "))
+			dict['System'] = unescape(tmpmatcher[4].string.replace("系统：", "").replace('\t', " ").replace('\r', "").replace('\n', " "))
+			dict['Developer'] = unescape(tmpmatcher[6].string.replace("作者：","").replace('\t', " ").replace('\r', "").replace('\n', " "))
+		matcher = soup.find_all( id = "comment_box")
+		if len(matcher):
+			matcher = matcher[0].find("a")
+			if matcher != None and matcher.string != None:
+				dict['Rating_Num'] = unescape(matcher.string.replace("评论(", "").replace(")", "").replace('\t', " ").replace('\r', "").replace('\n', " "))
 		if '<span class="spaceleft">资费：免费</span>' in data: dict['Free'] = 'True'
 		
 	elif market == '91':
